@@ -1,28 +1,27 @@
 # The dsh-model-relay bundle patch.
 #
-# Two considerations shape this file.
+# This file deliberately patches NOTHING on the `connection` row.
 #
-# 1. The gateway mounts an OpenAI-compatible `/v1` route on the existing Web
-#    server and forwards every call through the `llm` service, so it reuses
-#    whatever provider plugins are already registered (for example
-#    @tnnevol/dsh-codebuddy) instead of holding its own provider credentials.
+# It used to restate `inject: [webRuntime, webServer]`, on the theory that the
+# settings page's RPC channel needs Connection to be given the Web server
+# dependency. That was actively harmful on DSH 0.1.2-rc.1, and the reason is a
+# loader semantic that is easy to misread:
 #
-# 2. The settings page manages API keys over a plugin-owned RPC channel. dsh
-#    0.1.5-rc.2 resolves an RPC channel's owner from the Connection service
-#    context, so the channel only mounts when Connection itself is given the
-#    Web server dependency.
+#   Loader patches REPLACE a targeted row's whole value
+#   (`target[key] = value` in dsh-app-boot's applyEntryPatches), they do not
+#   merge into it. So restating `inject` here does not ADD `webServer` to
+#   whatever the other bundles asked for — it DELETES everything else.
 #
-# The `connection` row below therefore SUPERSEDES the one the codebuddy bundle
-# already patches. Loader patches replace a targeted row's whole `inject` list
-# rather than merging into it, so this list must stay the union of every
-# dependency any registered connection-RPC plugin requires — today that is
-# `webRuntime` and `webServer`. A later bundle adding its own channel has to
-# restate the same union.
-
-- id: connection
-  inject:
-    - webRuntime
-    - webServer
+# On 0.1.2-rc.1 the composed tree already patches this row (dsh-webgate:
+# `inject: [webRuntime, lanAccessHosts]`, plus its `trustedHosts` expression),
+# and the connection plugin itself declares `inject: [webServer, credentials]`
+# and reads `ctx.credentials` directly. Overriding the row therefore dropped
+# BOTH `credentials` and `lanAccessHosts`, which fails Connection at startup —
+# taking down the whole `/api` carrier and the Web UI with it, not just this
+# plugin's settings page.
+#
+# Connection is composed by the bundle stack, not by this plugin. A plugin
+# consumes a service; it does not get to define that service's dependencies.
 
 - insert:
     - id: dsh-model-relay
