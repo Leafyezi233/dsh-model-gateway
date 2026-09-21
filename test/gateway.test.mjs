@@ -267,7 +267,7 @@ await test('reasoning and tool calls translate to their OpenAI shapes', async ()
   })
 })
 
-await test('a system message and tool schema reach the llm service intact', async () => {
+await test('a system message becomes options.system and a tool schema reaches the llm service intact', async () => {
   let seen
   const { ctx, routes } = makeCtx(textChunks, { onStream: (options) => { seen = options } })
   mount(ctx, {})
@@ -287,13 +287,56 @@ await test('a system message and tool schema reach the llm service intact', asyn
   })
   assert.equal(seen.provider, 'codebuddy')
   assert.equal(seen.model, 'glm-5.2')
-  assert.equal(seen.messages[0].role, 'system')
-  assert.equal(seen.messages[0].content[0].text, 'be terse')
-  assert.equal(seen.messages[1].role, 'user')
+  // DSH models the system prompt as a request-level `options.system` string,
+  // not as a member of `messages`, so it must NOT appear in the array.
+  assert.equal(seen.system, 'be terse')
+  assert.equal(seen.messages.length, 1)
+  assert.equal(seen.messages[0].role, 'user')
+  assert.equal(seen.messages[0].content[0].text, 'hi')
   assert.equal(seen.tools[0].name, 'bash')
   assert.equal(seen.temperature, 0.5)
   assert.equal(seen.maxTokens, 128)
   assert.deepEqual(seen.stop, ['END'])
+})
+
+await test('several system messages are joined into one options.system prefix', async () => {
+  let seen
+  const { ctx, routes } = makeCtx(textChunks, { onStream: (options) => { seen = options } })
+  mount(ctx, {})
+  await withServer(routes, async (base) => {
+    await fetch(`${base}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'codebuddy/glm-5.2',
+        messages: [
+          { role: 'system', content: 'be terse' },
+          { role: 'developer', content: 'prefer tables' },
+          { role: 'user', content: 'hi' },
+        ],
+      }),
+    })
+  })
+  assert.equal(seen.system, 'be terse\n\nprefer tables')
+  assert.equal(seen.messages.length, 1)
+  assert.equal(seen.messages[0].role, 'user')
+})
+
+await test('a request with no system message sends no options.system at all', async () => {
+  let seen
+  const { ctx, routes } = makeCtx(textChunks, { onStream: (options) => { seen = options } })
+  mount(ctx, {})
+  await withServer(routes, async (base) => {
+    await fetch(`${base}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'codebuddy/glm-5.2', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+  })
+  // The key must be ABSENT rather than an empty string: an adapter maps a
+  // present `system` to a provider system slot, so '' would emit an empty one.
+  assert.equal('system' in seen, false)
+  assert.equal(seen.messages.length, 1)
 })
 
 await test('a tool result message becomes a user-role tool-result block', async () => {
