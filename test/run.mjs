@@ -28,6 +28,7 @@ const SUITES = [
   'nesting.test.mjs',
   'strategy.test.mjs',
   'stats.test.mjs',
+  'stats-store.test.mjs',
   'client-bundle.test.mjs',
   'adapter.test.mjs',
   'adapter-real.test.mjs',

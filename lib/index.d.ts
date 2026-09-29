@@ -41,6 +41,16 @@ export interface GatewayConfig {
   lanPort?: number | false
   /** Bind address for the LAN listener. @default '0.0.0.0' */
   lanHost?: string
+  /**
+   * Persist per-day statistics to disk. Default on since 0.5.0; turning it
+   * off restores the 0.4.x memory-only behavior (no file, no timers).
+   * @default true
+   */
+  statsPersist?: boolean
+  /** Statistics store path. @default '<DSH_HOME>/model-relay-stats.json' */
+  statsFile?: string
+  /** Days of per-day statistics retained. @default 90 */
+  statsRetentionDays?: number
 }
 
 /**
@@ -52,10 +62,11 @@ export interface GatewayConfig {
  * DSH home directory, and an absent `defaultProvider` stays absent. Marking
  * them required would describe them as always present.
  */
-export interface ResolvedGatewayConfig extends Required<Omit<GatewayConfig, 'defaultProvider' | 'keysFile' | 'groupsFile'>> {
+export interface ResolvedGatewayConfig extends Required<Omit<GatewayConfig, 'defaultProvider' | 'keysFile' | 'groupsFile' | 'statsFile'>> {
   defaultProvider: string | undefined
   keysFile: string | undefined
   groupsFile: string | undefined
+  statsFile: string | undefined
 }
 
 /**

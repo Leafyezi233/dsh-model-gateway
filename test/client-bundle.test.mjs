@@ -190,9 +190,8 @@ await test('a scored candidate shows its recent answer rate', async () => {
       'codebuddy_glm-5.2': { attempts: 4, answered: 3, refused: 1, retry429: 0, ignored: 0, ratio: 0.75, recentRatio: 0.75 },
     } } },
   }))
-  // The leaf carries a leading space so the number is separated from the model
-  // name inside the same pill, hence the trim.
-  assert.ok(texts.some((entry) => entry.trim() === '75%'), 'the percentage is rendered next to the candidate')
+  // F1: the badge now carries the sample size next to the percentage.
+  assert.ok(texts.some((entry) => entry.trim() === '75% · 4'), 'percentage and sample size render next to the candidate')
   assert.ok(texts.includes('codebuddy_glm-5.2'), 'the model name is still shown')
 })
 
@@ -204,8 +203,8 @@ await test('the badge prefers the recent rate over the lifetime one', async () =
       'codebuddy_glm-5.2': { attempts: 30, answered: 20, refused: 10, retry429: 0, ignored: 0, ratio: 0.67, recentRatio: 1 },
     } } },
   }))
-  assert.ok(texts.some((entry) => entry.trim() === '100%'), 'the recent rate is shown')
-  assert.ok(!texts.some((entry) => entry.trim() === '67%'), 'the lifetime rate stays in the tooltip')
+  assert.ok(texts.some((entry) => entry.trim() === '100% · 30'), 'the recent rate is shown with its sample size')
+  assert.ok(!texts.some((entry) => entry.trim().includes('67%')), 'the lifetime rate stays in the tooltip')
 })
 
 await test('an uncalled candidate shows no percentage at all', async () => {
@@ -213,6 +212,64 @@ await test('an uncalled candidate shows no percentage at all', async () => {
   assert.ok(texts.includes('codebuddy_glm-5.2'))
   assert.ok(!texts.some((entry) => typeof entry === 'string' && entry.endsWith('%')),
     'a candidate with no history must not be shown as 0%')
+})
+
+await test('F1: a small sample is named in the tooltip', async () => {
+  // 6 attempts is below the threshold: the tooltip must say so instead of
+  // letting "100%" read as proven.
+  const tree = render({
+    groups: [GROUP],
+    stats: { hinds: { requests: 6, allFailed: 0, candidates: {
+      'codebuddy_glm-5.2': { attempts: 6, answered: 6, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 },
+    } } },
+  })
+  const titles = []
+  const walk = (node) => {
+    if (node === null || node === undefined || typeof node !== 'object') return
+    if (Array.isArray(node)) { for (const child of node) walk(child); return }
+    if (typeof node.props?.title === 'string') titles.push(node.props.title)
+    walk(node.props?.children)
+  }
+  walk(tree)
+  assert.ok(titles.some((title) => title.includes('statSampleSmall')), 'the small-sample hint is present')
+})
+
+await test('F2: a recovered candidate tones amber, not green', async () => {
+  // recent 100% on a scarred lifetime record: green would say "all clear"
+  // while the lifetime rate still says "mostly broken".
+  const classes = classesOf(render({
+    groups: [GROUP],
+    stats: { hinds: { requests: 30, allFailed: 0, candidates: {
+      'codebuddy_glm-5.2': { attempts: 30, answered: 20, refused: 10, retry429: 0, ignored: 0, ratio: 0.67, recentRatio: 1 },
+    } } },
+  }))
+  const tone = classes.find((name) => name.includes('dsh-gw-stat '))
+  assert.ok(tone.includes('dsh-gw-stat-recovering'), 'the disagreement gets its own tone: ' + tone)
+})
+
+await test('F3: a composite member pill expands the inner scoreboard', async () => {
+  const composite = { id: 'outer', name: 'outer', models: ['dsh-model-relay_hinds'], enabled: true, strategy: 'sequential', retry429: 0, kind: 'composite', dangling: [] }
+  const tree = render({
+    groups: [composite],
+    stats: {
+      outer: { requests: 2, allFailed: 0, candidates: { 'dsh-model-relay_hinds': { attempts: 2, answered: 2, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 } } },
+      hinds: { requests: 2, allFailed: 0, candidates: { 'codebuddy_glm-5.2': { attempts: 2, answered: 2, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 } } },
+    },
+  })
+  // Collapsed: the inner name is not spelled out yet.
+  const collapsed = textsOf(tree)
+  assert.ok(!collapsed.includes('hinds\ncodebuddy_glm-5.2'), 'sanity: nothing expanded before the click')
+  // The expansion hook starts empty, so a static render shows the collapsed
+  // tree; the expansion affordance itself is what the tree must carry.
+  const clickables = []
+  const walk2 = (node) => {
+    if (node === null || node === undefined || typeof node !== 'object') return
+    if (Array.isArray(node)) { for (const child of node) walk2(child); return }
+    if (typeof node.props?.onClick === 'function') clickables.push(node)
+    walk2(node.props?.children)
+  }
+  walk2(tree)
+  assert.ok(clickables.length >= 1, 'the composite member pill is clickable')
 })
 
 await test('a candidate whose only failures were excused shows no rate', async () => {

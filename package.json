@@ -82,7 +82,7 @@
     }
   },
   "scripts": {
-    "check": "node --check lib/index.js && node --check lib/keys.js && node --check lib/groups.js && node --check lib/strategy.js && node --check lib/stats.js && node --check lib/adapter.js && node --check lib/client.js",
+    "check": "node --check lib/index.js && node --check lib/keys.js && node --check lib/groups.js && node --check lib/strategy.js && node --check lib/stats.js && node --check lib/adapter.js && node --check lib/stats-store.js && node --check lib/client.js",
     "test": "node test/run.mjs"
   }
 }
