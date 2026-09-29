@@ -118,7 +118,7 @@ const STATUS = {
  * The indices are positional (see the header): phase, status, error, then the
  * key-dialog cells, then groups, groupModels, stats, and the group-dialog cells.
  */
-function render({ groups, stats, dialog } = {}) {
+function render({ groups, stats, dialog, history } = {}) {
   const { captured, states, resetHooks } = loadComponent()
   states[0] = 'idle'
   states[1] = STATUS
@@ -127,6 +127,10 @@ function render({ groups, stats, dialog } = {}) {
   states[11] = [{ id: 'codebuddy_glm-5.2', name: 'GLM', provider: 'codebuddy' }]
   states[12] = stats ?? {}
   states[13] = dialog
+  // ChartsCard's own metric useState is hook 0 in the shared VM counter, so
+  // GatewaySection's cells all shift by one: expandedGroups is 17, statsHistory 18.
+  states[17] = new Set()
+  states[18] = history
   resetHooks()
   return captured({ t: (key) => key })
 }
@@ -245,6 +249,31 @@ await test('F2: a recovered candidate tones amber, not green', async () => {
   }))
   const tone = classes.find((name) => name.includes('dsh-gw-stat '))
   assert.ok(tone.includes('dsh-gw-stat-recovering'), 'the disagreement gets its own tone: ' + tone)
+})
+
+// ChartsCard and Heatmap are child components: the shared-hook VM renders
+// GatewaySection but never invokes child function components, so their innards
+// (legend, cell classes, hover titles) are asserted structurally against the
+// bundle source instead of the element tree.
+await test('heatmap legend ships the four intensity swatches and the empty one', async () => {
+  assert.ok(source.includes('dsh-gw-heat-legend'), 'the legend container class exists')
+  for (const cls of ['dsh-gw-heat-l1', 'dsh-gw-heat-l2', 'dsh-gw-heat-l3', 'dsh-gw-heat-l4']) {
+    assert.ok(source.includes(cls + ' dsh-gw-heat-legend-swatch'), 'a legend swatch reuses ' + cls)
+  }
+  assert.ok(source.includes('dsh-gw-heat-empty dsh-gw-heat-legend-swatch'), 'the no-data swatch is in the legend')
+})
+
+await test('heatmap cells carry outlines; empty days go dashed instead of invisible', async () => {
+  assert.ok(source.includes('outline:1px solid'), 'data cells have a solid outline')
+  assert.ok(source.includes('outline:1px dashed'), 'empty cells have a dashed outline')
+  assert.ok(!source.includes('dsh-gw-heat-empty{opacity:0.35}'), 'the old invisible empty style is gone')
+})
+
+await test('heatmap hover title spells calls and tokens, not just the date', async () => {
+  assert.ok(source.includes('heatCellTitle'), 'the title builder exists')
+  assert.ok(source.includes('title: heatCellTitle(t, cell, metric)'), 'cells use it for their title')
+  assert.ok(source.includes('chartsTipCalls'), 'the calls line exists')
+  assert.ok(source.includes('chartsTipTokens'), 'the token line exists')
 })
 
 await test('F3: a composite member pill expands the inner scoreboard', async () => {
