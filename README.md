@@ -16,11 +16,12 @@
 
 ## DSH 版本支持
 
-| DSH 版本 | 状态 | 说明 |
-| --- | --- | --- |
-| `0.1.5-rc.2` ~ `0.1.6-alpha.2` | ✅ | 上游原本支持的范围 |
-| **`0.1.2-rc.1`** | ✅ | **本 fork 新增**，需要下面三处修复 |
-| `0.1.1` 及更早 | ❌ | 不在声明范围内，且缺少请求级 `system` 字段 |
+![DSH 0.1.2-rc.1](https://img.shields.io/badge/DSH-0.1.2--rc.1-brightgreen.svg)
+![DSH 0.1.5-rc.2+](https://img.shields.io/badge/DSH-0.1.5--rc.2%2B-brightgreen.svg)
+![DSH 0.1.6-alpha.1+](https://img.shields.io/badge/DSH-0.1.6--alpha.1%2B-brightgreen.svg)
+![DSH 0.1.7-alpha.1+](https://img.shields.io/badge/DSH-0.1.7--alpha.1%2B-brightgreen.svg)
+
+> `0.1.2-rc.1` 与 `0.1.7-alpha.1+` 为本 fork 新增的支持范围，`0.1.2-rc.1` 需要下面三处修复；`0.1.1` 及更早不在声明范围内，且缺少请求级 `system` 字段。
 
 本仓库的 `package.json` 声明：
 
@@ -435,7 +436,9 @@ use a namespaced id such as codebuddy_deepseek-v4-flash, deepseek-official_deeps
 - **保留 90 天**（`statsRetentionDays` 可调，1–365），到期自动修剪。
 - **小时桶只存全局**：24 小时窗口是全局口径，**分组没有小时级历史**——按分组存小时桶会把文件放大几十倍，图表上会明说这一点，而不是显示一个空的分组 24h 图。
 - **写入是去抖的**（约 2 秒）：进程被强杀时最多丢最后约 2 秒的计数；退出/重载时会先落一次盘。
-- **权限 0600**；文件损坏时降级为空重新开始，绝不阻断启动。
+- **每次成功写盘前，上一版文档会轮换到 `model-relay-stats.json.bak`**——任何意外覆写删掉 `.bak` 即可回滚。
+- **空状态绝不覆写已有文件**：启动时读不到（或解析不了）文件只记一条告警、以空状态运行，原文件原样保留，直到有真实数据进来才重建；`rename` 遇 Windows 文件锁会按 100/200ms 短重试，不丢落盘、不留临时文件。
+- **权限 0600**；这一切都绝不阻断启动。
 
 为什么是独立文件而不是并进分组文件：分组文件是整体原子替换且走串行化写队列，把每个请求都变成一次全量磁盘写、还和设置页的编辑抢队列。统计用自己的文件、自己的去抖定时器、自己的队列。
 
@@ -578,14 +581,14 @@ http://<这台机器的局域网IP>:3081/v1
 ## 开发
 
 ```sh
-npm run check                # 语法检查（含新增的 groups.js / adapter.js）
+npm run check                # 语法检查（含 groups.js / adapter.js / host-compat.js）
 npm test                     # 全部测试
 ```
 
 单独跑：
 
 ```sh
-npm test                         # 跑全部 14 个套件，任一失败不影响其余
+npm test                         # 跑全部 16 个套件，任一失败不影响其余
 node test/gateway.test.mjs       # 协议翻译 + 路由 + 分组回退 + 设置端点 + 状态码/Retry-After
 node test/keys.test.mjs          # 密钥存储：哈希、权限、并发、锁定语义
 node test/groups.test.mjs        # 分组存储：校验、并发、损坏降级、kind、失效引用

@@ -7,10 +7,13 @@
  * - prune drops days beyond the retention window,
  * - a corrupt file degrades to empty instead of throwing,
  * - dispose stops further writes,
- * - group rename/reconcile/forget keep days and candidates consistent.
+ * - group rename/reconcile/forget keep days and candidates consistent,
+ * - and (0.6.0 hardening) a flush never serializes empty or partial memory
+ *   over a populated file — the failure mode that wiped the September
+ *   history in one bad restart.
  */
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { StatsStore, localDateKey } from '../lib/stats-store.js'
@@ -150,6 +153,107 @@ await test('reconcile drops only the removed candidates', async () => {
     assert.ok(snap.candidates.g.p_x, 'the kept candidate stays')
     assert.equal(snap.candidates.g.p_y, undefined, 'the removed candidate goes')
   } finally { await store.dispose(); cleanup() }
+})
+
+/**
+ * The 0.6.0 persistence-hardening cases (the September history wipe).
+ *
+ * A flush must never serialize empty or partial memory over a populated
+ * file. The racing subclass stands in for the production condition where
+ * the load's file read is still in flight (a lock holder, an AV scan) when
+ * the first flush fires — a window every restart used to expose.
+ */
+class RacingStore extends StatsStore {
+  async load() { await new Promise((resolve) => setTimeout(resolve, 100)); return super.load() }
+}
+
+const HISTORY = {
+  version: 1,
+  days: {
+    '2026-09-21': { requests: 40, calls: 40, answered: 38, refused: 2, inputTokens: 1000, outputTokens: 2000, callsWithUsage: 38, hours: [], groups: {} },
+    '2026-09-22': { requests: 25, calls: 25, answered: 25, refused: 0, inputTokens: 800, outputTokens: 1600, callsWithUsage: 25, hours: [], groups: {} },
+  },
+  candidates: { 'g\0p_m': { attempts: 65, answered: 63, refused: 2 } },
+}
+
+function seededStore(Store, name, logger) {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-relay-stats-'))
+  const file = join(dir, name)
+  writeFileSync(file, JSON.stringify(HISTORY, null, 2))
+  const store = new Store({ file, logger })
+  return { store, file, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+}
+
+await test('a dispose that races its own load flushes the loaded history, not an empty document', async () => {
+  const { store, file, cleanup } = seededStore(RacingStore, 'raced.json')
+  try {
+    await store.dispose()
+    await store.loaded
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
+    assert.deepEqual(Object.keys(parsed.days).sort(), ['2026-09-21', '2026-09-22'], 'both September days survive')
+    assert.equal(parsed.days['2026-09-21'].requests, 40)
+  } finally { cleanup() }
+})
+
+await test('a record landing before load settles keeps the loaded history plus today', async () => {
+  const { store, file, cleanup } = seededStore(RacingStore, 'raced-record.json')
+  try {
+    store.record({ groupName: 'g', leg: 'p_m', answered: true })
+    await store.dispose()
+    await store.loaded
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
+    const keys = Object.keys(parsed.days).sort()
+    assert.deepEqual(keys, ['2026-09-21', '2026-09-22', localDateKey()], 'history is not displaced by today')
+  } finally { cleanup() }
+})
+
+await test('an empty store never replaces an existing document; real data still rebuilds', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-relay-stats-'))
+  const file = join(dir, 'stats.json')
+  const warns = []
+  try {
+    writeFileSync(file, '{ not json', 'utf8')
+    const store = new StatsStore({ file, logger: { warn: (m) => warns.push(m) } })
+    await store.loaded
+    await store.dispose()
+    assert.equal(readFileSync(file, 'utf8'), '{ not json', 'the empty flush was skipped, file untouched')
+    assert.equal(warns.some((m) => String(m).includes('not valid JSON')), true, 'the parse failure is logged')
+    // The rebuild path is unaffected by the guard once real data arrives.
+    const next = new StatsStore({ file, logger: { warn: () => {} } })
+    next.record({ groupName: 'g', leg: 'p_m', answered: true, usage: { inputTokens: 10, outputTokens: 5 } })
+    await next.dispose()
+    const rebuilt = JSON.parse(readFileSync(file, 'utf8'))
+    assert.deepEqual(Object.keys(rebuilt.days), [localDateKey()], 'real data flushes normally')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+await test('flush rotates the previous document into a .bak sibling', async () => {
+  const { store, file, cleanup } = seededStore(StatsStore, 'backed-up.json')
+  try {
+    await store.loaded
+    const before = readFileSync(file, 'utf8')
+    store.record({ groupName: 'g', leg: 'p_m', answered: true })
+    await store.flush()
+    assert.equal(readFileSync(`${file}.bak`, 'utf8'), before, '.bak holds the pre-flush document')
+    const after = JSON.parse(readFileSync(file, 'utf8'))
+    assert.equal(Object.keys(after.days).length, 3, 'the live document carries history plus today')
+  } finally { await store.dispose(); cleanup() }
+})
+
+await test('an unreadable-but-existing file is reported, not silently ignored', async () => {
+  // A directory where the file should be: readFile fails with something that
+  // is not ENOENT on every platform.
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-relay-stats-'))
+  const file = join(dir, 'stats.json')
+  try {
+    mkdirSync(file)
+    const warns = []
+    const store = new StatsStore({ file, logger: { warn: (m) => warns.push(m) } })
+    await store.loaded
+    assert.equal(store.days.size, 0, 'the store still starts empty')
+    assert.equal(warns.some((m) => String(m).includes('could not be read')), true, 'the read failure is logged')
+    await store.dispose()
+  } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 
 process.exitCode = failures === 0 ? 0 : 1
