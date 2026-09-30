@@ -29,32 +29,59 @@ const dir = mkdtempSync(join(tmpdir(), 'dsh-gw-reg-'))
 let seq = 0
 const files = () => ({ keysFile: join(dir, `k${seq}.json`), groupsFile: join(dir, `g${seq++}.json`) })
 
-/** A fake context whose llm service records registration calls. */
-function makeCtx({ withLlm = true, withSettings = true, efforts, window, streamFor } = {}) {
-  const registered = { providers: [], adapters: [], sections: [], disposed: 0 }
+/**
+ * A fake context whose llm service records registration calls.
+ *
+ * `settingsShape` picks which settings service the host pretends to be:
+ *  - 'legacy' (default): 0.1.5-shaped — `register` plus `installSection`,
+ *    recording the namespaces sections were installed under;
+ *  - 'entry-id': 0.1.7-shaped — no `register`, only `configure`, recording
+ *    the policy calls;
+ *  - 'empty': a service speaking neither model.
+ *
+ * The 0.1.5 fake carries `register` on purpose: it is the discriminator the
+ * wiring probes, and `installSection` alone would describe a transitional
+ * host the real harness never produces. `fiber` stands in for the composition
+ * entry the 0.1.7 loader reports (with its kind prefix).
+ */
+function makeCtx({ withLlm = true, withSettings = true, settingsShape = 'legacy', fiber, efforts, window, streamFor } = {}) {
+  const registered = { providers: [], adapters: [], sections: [], configured: [], disposed: 0 }
   const infos = []
   const warnings = []
   const capabilityReads = []
   /** Every dispatch the gateway made, in order, as `provider/model`. */
   const streamCalls = []
+  const settingsService = !withSettings
+    ? undefined
+    : settingsShape === 'legacy'
+      ? {
+          register: () => ({}),
+          installSection: (_c, ns, _schema, _value, _hooks) => {
+            registered.sections.push(ns)
+          },
+        }
+      : settingsShape === 'entry-id'
+        ? {
+            configure: (policy) => {
+              registered.configured.push(policy)
+            },
+          }
+        : {}
   const ctx = {
     logger: { info: (m) => infos.push(m), warn: (m) => warnings.push(m) },
+    ...(fiber === undefined ? {} : { fiber }),
     effect: (fn) => {
       const dispose = fn()
       if (typeof dispose === 'function') ctx.__disposers.push(dispose)
       return () => {}
     },
     __disposers: [],
-    get: (key) => (key === 'settings' && withSettings ? { installSection: () => {} } : undefined),
+    get: (key) => (key === 'settings' ? settingsService : undefined),
     inject: (services, callback) => {
       callback({
         get: (key) => {
-          if (key === 'settings' && withSettings) {
-            return {
-              installSection: (_c, ns, _schema, _value, _hooks) => {
-                registered.sections.push(ns)
-              },
-            }
+          if (key === 'settings') {
+            return settingsService
           }
           if (key === 'connection') {
             return { fetch: { register: async () => () => {} } }
@@ -102,7 +129,7 @@ function makeCtx({ withLlm = true, withSettings = true, efforts, window, streamF
       },
     }
   }
-  return { ctx, registered, infos, warnings, capabilityReads, streamCalls }
+  return { ctx, registered, infos, warnings, capabilityReads, streamCalls, settingsService }
 }
 
 /** Write a groups file naming the given members, and return the mount config. */
@@ -188,6 +215,63 @@ await test('a registration failure is contained and reported', async () => {
   assert.equal(infos.length > 0, true)
   // The gateway must keep working over /v1 even when the provider is refused.
   assert.equal(ctx.llm.listProviders().length, 1)
+})
+
+/**
+ * The settings integration has two generations, and the wiring picks its path
+ * from what the host can do — never from a version literal. These cases pin
+ * both paths and the transitions between them.
+ */
+
+await test('a 0.1.7 host keys the provider card by the bare entry id', async () => {
+  const { ctx, registered } = makeCtx({
+    settingsShape: 'entry-id',
+    fiber: { entry: { id: 'include:dsh-model-relay' } },
+  })
+  apply(ctx, files())
+  assert.equal(registered.providers.length, 1)
+  // The kind prefix the 0.1.7 loader reports must not leak into the namespace:
+  // the settings service indexes the bare id, and the prefixed form 409s.
+  assert.equal(registered.providers[0].settingsNs, 'dsh-model-relay')
+  assert.deepEqual(registered.sections, [], 'nothing to install — the namespace is the entry id')
+  assert.deepEqual(registered.configured, [{ auto: false }], 'the host-generated page is suppressed; the plugin has its own')
+})
+
+await test('a 0.1.7 host without a reachable entry id falls back to the declared id', async () => {
+  const { ctx, registered } = makeCtx({ settingsShape: 'entry-id' })
+  apply(ctx, files())
+  assert.equal(registered.providers[0].settingsNs, 'dsh-model-relay')
+})
+
+await test('a pre-0.1.7 host ignores the entry id even when one is present', async () => {
+  const { ctx, registered } = makeCtx({
+    settingsShape: 'legacy',
+    fiber: { entry: { id: 'include:dsh-model-relay' } },
+  })
+  apply(ctx, files())
+  // The legacy service owns namespaces by registration; the entry id plays no
+  // part there, and switching it would silently orphan every existing install.
+  assert.equal(registered.providers[0].settingsNs, 'llm-dsh-model-relay')
+  assert.deepEqual(registered.sections, ['llm-dsh-model-relay'])
+  assert.deepEqual(registered.configured, [])
+})
+
+await test('a settings service speaking neither model still registers the provider', async () => {
+  const { ctx, registered, warnings } = makeCtx({ settingsShape: 'empty' })
+  apply(ctx, files())
+  assert.equal(registered.providers.length, 1)
+  assert.deepEqual(registered.sections, [])
+  assert.equal(warnings.some((line) => typeof line === 'string' && line.includes('settings integration failed')), false)
+})
+
+await test('a 0.1.7 configure failure is contained and reported', async () => {
+  const { ctx, registered, warnings, settingsService } = makeCtx({ settingsShape: 'entry-id' })
+  settingsService.configure = () => { throw new Error('NO_POLICY') }
+  apply(ctx, files())
+  // The card is served by the entry-id join alone; a refused policy call must
+  // not take the registration down with it.
+  assert.equal(registered.providers.length, 1)
+  assert.equal(warnings.some((line) => typeof line === 'string' && line.includes('settings integration failed')), true)
 })
 
 /**

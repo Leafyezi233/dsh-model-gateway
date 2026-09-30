@@ -6,12 +6,24 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import type Schema from '@deepseek-ai/schemastery'
 
 /** Cordis plugin name. */
 export declare const name: 'dsh-model-relay'
 
 /** Services the plugin requires before it activates. */
 export declare const inject: readonly ['llm', 'webServer']
+
+/**
+ * Configuration schema exported for dsh 0.1.7.
+ *
+ * There the profile entry's `config` is validated by the host against this
+ * schema, and the entry id doubles as the settings namespace the provider
+ * card joins against. Field-for-field it mirrors {@link GatewayConfig}; on
+ * pre-0.1.7 hosts the export is inert — that generation's loader ignores it
+ * and configuration keeps flowing through the profile patch layer.
+ */
+export declare const Config: Schema
 
 /** Normalized plugin configuration. */
 export interface GatewayConfig {

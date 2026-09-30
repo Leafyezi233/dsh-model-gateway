@@ -33,6 +33,7 @@ const SUITES = [
   'adapter.test.mjs',
   'adapter-real.test.mjs',
   'registration.test.mjs',
+  'host-compat.test.mjs',
   'failure-code.test.mjs',
   'verify-table.mjs',
   'client-id.test.mjs',
