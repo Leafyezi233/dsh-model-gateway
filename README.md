@@ -1,7 +1,5 @@
 # 模型中转站 (@leaf233/dsh-model-gateway)
 
-> 本仓库是 [qilin-zhu/dsh-model-relay](https://github.com/qilin-zhu/dsh-model-relay) 的 fork，包名 `@leaf233/dsh-model-gateway`。上游 npm 包 `dsh-model-relay`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
-
 给 DeepSeek Harness 挂一个 OpenAI 兼容的 `/v1` 接口，把 harness 里已注册的大模型（比如 `@tnnevol/dsh-codebuddy` 里的 CodeBuddy 模型）反代出去，其他项目用标准 OpenAI 客户端就能调用。
 
 在 **设置 → 模型中转站** 里可以看到所有接口地址、分组、创建和管理 API 密钥、开关鉴权、查看可用模型。
@@ -13,6 +11,8 @@
 这是因为一些事实性存在的问题：CodeBuddy 的 refresh token 会轮换，而且 `@tnnevol/dsh-codebuddy` 内部用**单飞（single-flight）** 保证并发刷新只发生一次。如果本插件自己再建一个 session，两次刷新会互相作废，结果是 Web 界面里的登录被踢掉。走 `ctx.llm` 就不可能出现这种情况。
 
 由此还顺带复用了上游插件的账号故障转移、额度感知、图片序列化和模型目录。
+
+> 本仓库是 [qilin-zhu/dsh-model-relay](https://github.com/qilin-zhu/dsh-model-relay) 的 fork，包名 `@leaf233/dsh-model-gateway`。上游 npm 包 `dsh-model-relay`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
 
 ## DSH 版本支持
 
