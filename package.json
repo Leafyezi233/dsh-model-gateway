@@ -1,7 +1,7 @@
 {
   "name": "@leaf233/dsh-model-gateway",
   "displayName": "模型中转站",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Model relay station for DeepSeek Harness (模型中转站): serve any registered DSH LLM provider (e.g. @tnnevol/dsh-codebuddy) over an OpenAI-compatible /v1 API, so other projects can call those models with a standard OpenAI client.",
   "type": "module",
   "license": "Apache-2.0",
@@ -19,7 +19,7 @@
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1"
+    "dsh": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1"
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -68,12 +68,12 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
-    "@deepseek-ai/dsh-attachment": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
-    "@deepseek-ai/dsh-client-locale": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
-    "@deepseek-ai/dsh-client-ui-settings": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
-    "@deepseek-ai/dsh-home-paths": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
-    "@deepseek-ai/dsh-host-webserver": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
-    "@deepseek-ai/dsh-llm": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1",
+    "@deepseek-ai/dsh-attachment": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-locale": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-home-paths": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-host-webserver": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-llm": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1",
     "@deepseek-ai/schemastery": "^3.18.2"
   },
   "peerDependenciesMeta": {
