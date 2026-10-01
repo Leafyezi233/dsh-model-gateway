@@ -277,11 +277,11 @@ await test('heatmap hover title spells calls and tokens, not just the date', asy
 })
 
 await test('F3: a composite member pill expands the inner scoreboard', async () => {
-  const composite = { id: 'outer', name: 'outer', models: ['dsh-model-relay_hinds'], enabled: true, strategy: 'sequential', retry429: 0, kind: 'composite', dangling: [] }
+  const composite = { id: 'outer', name: 'outer', models: ['dsh-model-gateway_hinds'], enabled: true, strategy: 'sequential', retry429: 0, kind: 'composite', dangling: [] }
   const tree = render({
     groups: [composite],
     stats: {
-      outer: { requests: 2, allFailed: 0, candidates: { 'dsh-model-relay_hinds': { attempts: 2, answered: 2, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 } } },
+      outer: { requests: 2, allFailed: 0, candidates: { 'dsh-model-gateway_hinds': { attempts: 2, answered: 2, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 } } },
       hinds: { requests: 2, allFailed: 0, candidates: { 'codebuddy_glm-5.2': { attempts: 2, answered: 2, refused: 0, retry429: 0, ignored: 0, ratio: 1, recentRatio: 1 } } },
     },
   })

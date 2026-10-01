@@ -126,7 +126,7 @@ async function mounted(fail, members = ['member_m']) {
 /** Stream a group and return its terminal reason, plus every chunk seen. */
 async function terminalOf(llm, model = 'g') {
   const chunks = []
-  for await (const chunk of llm.stream({ provider: 'dsh-model-relay', model, messages: [] })) {
+  for await (const chunk of llm.stream({ provider: 'dsh-model-gateway', model, messages: [] })) {
     chunks.push(chunk)
   }
   return { reason: chunks.find((chunk) => chunk.type === 'finish')?.reason, chunks }

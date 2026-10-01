@@ -30,20 +30,20 @@ const test = async (label, fn) => {
 }
 
 await test('entryIdOf strips the composition kind prefix', async () => {
-  // The 0.1.7 loader reports `include:dsh-model-relay`; the settings service
+  // The 0.1.7 loader reports `include:dsh-model-gateway`; the settings service
   // only ever indexes the bare id.
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'include:dsh-model-relay' } } }), 'dsh-model-relay')
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'plugin:ns:dsh-model-relay' } } }), 'dsh-model-relay', 'only the last segment is the kind prefix')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'include:dsh-model-gateway' } } }), 'dsh-model-gateway')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'plugin:ns:dsh-model-gateway' } } }), 'dsh-model-gateway', 'only the last segment is the kind prefix')
 })
 
 await test('entryIdOf keeps a bare id and falls back without an entry', async () => {
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'dsh-model-relay' } } }), 'dsh-model-relay')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'dsh-model-gateway' } } }), 'dsh-model-gateway')
   assert.equal(entryIdOf({ fiber: { entry: {} } }), ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf({ fiber: { entry: { id: '' } } }), ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf({ fiber: {} }), ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf({}), ENTRY_ID_FALLBACK)
   assert.equal(entryIdOf(undefined), ENTRY_ID_FALLBACK)
-  assert.equal(entryIdOf({ fiber: { entry: { id: 'dsh-model-relay' } } }, 'other'), 'dsh-model-relay', 'the fallback only covers an unreachable id')
+  assert.equal(entryIdOf({ fiber: { entry: { id: 'dsh-model-gateway' } } }, 'other'), 'dsh-model-gateway', 'the fallback only covers an unreachable id')
 })
 
 await test('supportsVolatile is false on this generation and true on a 0.1.7-shaped schemastery', async () => {

@@ -278,7 +278,7 @@ await test('a group defaults to the model kind, and composite is stored', async 
     assert.equal((await store.get('plain')).kind, 'model')
 
     await store.create('inner', ['a_b'])
-    const composite = await store.create('outer', ['dsh-model-relay_inner'], { kind: 'composite' })
+    const composite = await store.create('outer', ['dsh-model-gateway_inner'], { kind: 'composite' })
     assert.equal(composite.ok, true, composite.error)
     assert.equal(composite.group.kind, 'composite')
 
@@ -318,18 +318,18 @@ await test('a composite must point at an existing model group, with the prefix',
     const store = new GatewayGroupStore({ file })
     await store.create('inner', ['a_b'])
 
-    assert.equal((await store.create('missing', ['dsh-model-relay_nope'], { kind: 'composite' })).ok, false)
+    assert.equal((await store.create('missing', ['dsh-model-gateway_nope'], { kind: 'composite' })).ok, false)
     // A bare name would resolve to the inner group's FIRST leg only.
     assert.equal((await store.create('bare', ['inner'], { kind: 'composite' })).ok, false)
     // Self-reference.
-    assert.equal((await store.create('self', ['dsh-model-relay_self'], { kind: 'composite' })).ok, false)
+    assert.equal((await store.create('self', ['dsh-model-gateway_self'], { kind: 'composite' })).ok, false)
     // A composite is not a legal member of a composite: this is what keeps the
     // reference graph bipartite, and therefore what makes "no nesting" follow
     // from the type rule instead of needing its own check.
-    await store.create('first', ['dsh-model-relay_inner'], { kind: 'composite' })
-    assert.equal((await store.create('second', ['dsh-model-relay_first'], { kind: 'composite' })).ok, false)
+    await store.create('first', ['dsh-model-gateway_inner'], { kind: 'composite' })
+    assert.equal((await store.create('second', ['dsh-model-gateway_first'], { kind: 'composite' })).ok, false)
 
-    assert.equal((await store.create('good', ['dsh-model-relay_inner'], { kind: 'composite' })).ok, true)
+    assert.equal((await store.create('good', ['dsh-model-gateway_inner'], { kind: 'composite' })).ok, true)
   })
 })
 
@@ -346,12 +346,12 @@ await test('dangling members and referrers are reported without being stored', a
   await withStore(async (file) => {
     const store = new GatewayGroupStore({ file })
     await store.create('inner', ['a_b'])
-    await store.create('outer', ['dsh-model-relay_inner'], { kind: 'composite' })
+    await store.create('outer', ['dsh-model-gateway_inner'], { kind: 'composite' })
     assert.deepEqual((await store.get('outer')).dangling, [])
 
     await store.remove('inner')
     const stale = await store.get('outer')
-    assert.deepEqual(stale.dangling, ['dsh-model-relay_inner'])
+    assert.deepEqual(stale.dangling, ['dsh-model-gateway_inner'])
     // Derived on read, so it never lands in the document.
     const onDisk = JSON.parse(await readFile(file, 'utf8'))
     assert.equal('dangling' in onDisk.groups.find((group) => group.name === 'outer'), false)

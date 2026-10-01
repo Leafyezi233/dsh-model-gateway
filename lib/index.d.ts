@@ -1,5 +1,5 @@
 /**
- * dsh-model-relay (模型中转站) — type declarations.
+ * dsh-model-gateway (模型中转站) — type declarations.
  *
  * The plugin is plain JavaScript; these declarations cover the public surface a
  * profile author touches: the Cordis entry points and the config shape.
@@ -9,7 +9,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type Schema from '@deepseek-ai/schemastery'
 
 /** Cordis plugin name. */
-export declare const name: 'dsh-model-relay'
+export declare const name: 'dsh-model-gateway'
 
 /** Services the plugin requires before it activates. */
 export declare const inject: readonly ['llm', 'webServer']

@@ -163,8 +163,8 @@ await test('the gateway registers itself as a DSH provider', async () => {
   apply(ctx, files())
   assert.equal(registered.providers.length, 1)
   const entry = registered.providers[0]
-  assert.equal(entry.provider, 'dsh-model-relay')
-  assert.equal(entry.displayName, 'dsh-model-relay')
+  assert.equal(entry.provider, 'dsh-model-gateway')
+  assert.equal(entry.displayName, 'dsh-model-gateway')
   assert.equal(entry.settingsNs, 'llm-dsh-model-relay')
   assert.deepEqual(entry.settingsPath, [])
 })
@@ -174,9 +174,9 @@ await test('the adapter is bound to that exact route and preserves the id', asyn
   apply(ctx, files())
   assert.equal(registered.adapters.length, 1)
   const { providers, adapter } = registered.adapters[0]
-  assert.deepEqual(providers, ['dsh-model-relay'])
+  assert.deepEqual(providers, ['dsh-model-gateway'])
   // The runtime compares these; a mismatch throws INVALID_ADAPTER at load.
-  assert.deepEqual(adapter.providerInfo('dsh-model-relay'), { id: 'dsh-model-relay', name: 'dsh-model-relay' })
+  assert.deepEqual(adapter.providerInfo('dsh-model-gateway'), { id: 'dsh-model-gateway', name: 'dsh-model-gateway' })
 })
 
 await test('a settings section is installed under the provider namespace', async () => {
@@ -226,13 +226,13 @@ await test('a registration failure is contained and reported', async () => {
 await test('a 0.1.7 host keys the provider card by the bare entry id', async () => {
   const { ctx, registered } = makeCtx({
     settingsShape: 'entry-id',
-    fiber: { entry: { id: 'include:dsh-model-relay' } },
+    fiber: { entry: { id: 'include:dsh-model-gateway' } },
   })
   apply(ctx, files())
   assert.equal(registered.providers.length, 1)
   // The kind prefix the 0.1.7 loader reports must not leak into the namespace:
   // the settings service indexes the bare id, and the prefixed form 409s.
-  assert.equal(registered.providers[0].settingsNs, 'dsh-model-relay')
+  assert.equal(registered.providers[0].settingsNs, 'dsh-model-gateway')
   assert.deepEqual(registered.sections, [], 'nothing to install — the namespace is the entry id')
   assert.deepEqual(registered.configured, [{ auto: false }], 'the host-generated page is suppressed; the plugin has its own')
 })
@@ -240,13 +240,13 @@ await test('a 0.1.7 host keys the provider card by the bare entry id', async () 
 await test('a 0.1.7 host without a reachable entry id falls back to the declared id', async () => {
   const { ctx, registered } = makeCtx({ settingsShape: 'entry-id' })
   apply(ctx, files())
-  assert.equal(registered.providers[0].settingsNs, 'dsh-model-relay')
+  assert.equal(registered.providers[0].settingsNs, 'dsh-model-gateway')
 })
 
 await test('a pre-0.1.7 host ignores the entry id even when one is present', async () => {
   const { ctx, registered } = makeCtx({
     settingsShape: 'legacy',
-    fiber: { entry: { id: 'include:dsh-model-relay' } },
+    fiber: { entry: { id: 'include:dsh-model-gateway' } },
   })
   apply(ctx, files())
   // The legacy service owns namespaces by registration; the entry id plays no
@@ -295,7 +295,7 @@ await test('a group advertises the intersection of its members, never the union'
   })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'codebuddy_chat']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   // `off` and `max` are offered by only one member: advertising them would let
   // a caller pick a level the other member rejects mid-request.
   assert.deepEqual(resolved.reasoning.efforts.map((e) => e.id), ['low', 'high'])
@@ -310,7 +310,7 @@ await test('a member with no reasoning collapses the group to no choice at all',
   })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'codebuddy_chat']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   assert.equal('reasoning' in resolved, false)
   // Losing the effort choice must NOT cost the group its capacity: the two
   // facts are independent, and dropping capacity would silently switch
@@ -325,7 +325,7 @@ await test('an unreadable member capacity does not erase a known effort set', as
   })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'codebuddy_chat']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   // The minimum over a partial walk is not the group's capacity, so it must be
   // omitted — but the reasoning answer is unaffected and still valid.
   assert.equal('context' in resolved, false)
@@ -336,7 +336,7 @@ await test('a group whose members all agree keeps the shared levels', async () =
   const { ctx, registered } = makeCtx({ efforts: { 'glm-5.2': FOUR, 'chat': FOUR } })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'codebuddy_chat']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   assert.deepEqual(resolved.reasoning.efforts.map((e) => e.id), ['off', 'low', 'high', 'max'])
   assert.equal('defaultEffort' in resolved.reasoning, false)
 })
@@ -347,7 +347,7 @@ await test('capacity and efforts come from the same single member walk', async (
   })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'codebuddy_chat']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   assert.deepEqual(resolved.context, { contextWindow: 128000 })
   // One read per member, not one per fact: the two answers are gathered
   // together, and the result is cached for the next catalog build.
@@ -358,7 +358,7 @@ await test('a group naming an unreachable member advertises nothing rather than 
   const { ctx, registered } = makeCtx({ efforts: { 'glm-5.2': FOUR } })
   apply(ctx, groupsWith(['codebuddy_glm-5.2', 'nosuch_glm-5.2']))
   const adapter = registered.adapters[0].adapter
-  const resolved = await adapter.resolveModel('dsh-model-relay', 'g')
+  const resolved = await adapter.resolveModel('dsh-model-gateway', 'g')
   assert.equal('reasoning' in resolved, false)
   assert.equal('context' in resolved, false)
 })

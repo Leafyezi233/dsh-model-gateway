@@ -1,4 +1,4 @@
-# The dsh-model-relay bundle patch.
+# The dsh-model-gateway bundle patch.
 #
 # This file deliberately patches NOTHING on the `connection` row.
 #
@@ -24,12 +24,12 @@
 # consumes a service; it does not get to define that service's dependencies.
 
 - insert:
-    - id: dsh-model-relay
+    - id: dsh-model-gateway
       # The `id` above stays unscoped on purpose: it is the anchor your own
-      # profile patch layer targets (`- id: dsh-model-relay`), so scoping it
+      # profile patch layer targets (`- id: dsh-model-gateway`), so scoping it
       # would silently break every existing override. Only `name` — the
       # resolvable package identity — carries the npm scope.
-      name: '@leaf233/dsh-model-relay'
+      name: '@leaf233/dsh-model-gateway'
       # No config ships here on purpose. The gateway defaults to loopback only,
       # which is the safe default for anyone installing this bundle.
       #
@@ -37,7 +37,7 @@
       # own patch layer (profiles/<name>/cordis.patch.yml), which is applied
       # after every bundle and therefore wins:
       #
-      #   - id: dsh-model-relay
+      #   - id: dsh-model-gateway
       #     inject: [llm, webServer]
       #     config:
       #       lanPort: 3081

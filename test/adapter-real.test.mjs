@@ -29,7 +29,7 @@ const test = async (label, fn) => {
   }
 }
 
-const PROVIDER = 'dsh-model-relay'
+const PROVIDER = 'dsh-model-gateway'
 
 /** Build a real Cordis context with the real llm service mounted. */
 async function makeRealLlm() {

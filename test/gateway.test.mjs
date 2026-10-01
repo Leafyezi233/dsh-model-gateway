@@ -1,5 +1,5 @@
 /**
- * Protocol-translation test for dsh-model-relay.
+ * Protocol-translation test for dsh-model-gateway.
  *
  * Drives the real route handler with a fake `llm` service and a real
  * `node:http` server, so the OpenAI wire shape is exercised end to end without
@@ -95,13 +95,13 @@ function makeCtx(chunks, { onStream, streamFor, modelInfo, efforts } = {}) {
       listProviders: () => [
         { id: 'codebuddy', name: 'CodeBuddy' },
         { id: 'deepseek', name: 'DeepSeek' },
-        { id: 'dsh-model-relay', name: 'dsh-model-relay' },
+        { id: 'dsh-model-gateway', name: 'dsh-model-gateway' },
       ],
       listModels: async (provider) => {
         if (provider === 'codebuddy') {
           return [{ provider, id: 'deepseek-v4.1-flash', name: 'Flash' }, { provider, id: 'glm-5.2', name: 'GLM' }]
         }
-        if (provider === 'dsh-model-relay') return []
+        if (provider === 'dsh-model-gateway') return []
         return [{ provider, id: 'deepseek-chat', name: 'Chat' }]
       },
       /**
@@ -492,7 +492,7 @@ await test('the namespaced id selects the intended provider for a shared model i
   let seen
   const { ctx, routes } = makeCtx(textChunks, { onStream: (options) => { seen = options } })
   ctx.llm.listModels = async (provider) => (
-    provider === 'dsh-model-relay'
+    provider === 'dsh-model-gateway'
       ? []
       : [{ provider, id: 'deepseek-v4-flash', name: 'Flash' }]
   )
@@ -1354,7 +1354,7 @@ await test('a group naming this gateway is refused rather than recursing', async
   await withServer(routes, async (base) => {
     // The gateway registers itself as a provider, so this spelling looks
     // legitimate; resolving it must stop instead of looping back into itself.
-    const created = await createGroup(settingsRoutes, 'self', ['dsh-model-relay_self'])
+    const created = await createGroup(settingsRoutes, 'self', ['dsh-model-gateway_self'])
     assert.equal(created.ok, true, 'the store accepts it; resolution is where it is refused')
     const res = await fetch(`${base}/v1/chat/completions`, {
       method: 'POST',
@@ -1860,7 +1860,7 @@ await test('a group whose FIRST candidate cannot be resolved still fails over', 
     const created = await createScheduledGroup(
       settingsRoutes,
       'g',
-      ['dsh-model-relay_ghost', 'deepseek_deepseek-chat'],
+      ['dsh-model-gateway_ghost', 'deepseek_deepseek-chat'],
       'sequential',
       0,
     )
@@ -1879,7 +1879,7 @@ await test('a group whose only candidate cannot be resolved reports that failure
   const { ctx, routes, settingsRoutes } = makeCtx(textChunks)
   mount(ctx, {})
   await withServer(routes, async (base) => {
-    await createScheduledGroup(settingsRoutes, 'g', ['dsh-model-relay_ghost'], 'sequential', 0)
+    await createScheduledGroup(settingsRoutes, 'g', ['dsh-model-gateway_ghost'], 'sequential', 0)
     const res = await fetch(`${base}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -2208,7 +2208,7 @@ await test('a group whose every candidate is unresolvable still records the atte
   const { ctx, routes, settingsRoutes } = makeCtx(textChunks)
   mount(ctx, {})
   await withServer(routes, async (base) => {
-    await createGroup(settingsRoutes, 'g', ['dsh-model-relay_a', 'dsh-model-relay_b'])
+    await createGroup(settingsRoutes, 'g', ['dsh-model-gateway_a', 'dsh-model-gateway_b'])
     const res = await fetch(`${base}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -2220,8 +2220,8 @@ await test('a group whose every candidate is unresolvable still records the atte
     const listed = await callSettings(settingsRoutes, 'listGroups')
     assert.equal(listed.value.stats.g?.requests, 1, 'the request must be counted')
     assert.equal(listed.value.stats.g?.allFailed, 1, 'and recorded as having served nobody')
-    assert.equal(statsRow(listed, 'g', 'dsh-model-relay_a').ignored, 1, 'a misconfigured member is excused, not blamed')
-    assert.equal(statsRow(listed, 'g', 'dsh-model-relay_b').ignored, 1)
+    assert.equal(statsRow(listed, 'g', 'dsh-model-gateway_a').ignored, 1, 'a misconfigured member is excused, not blamed')
+    assert.equal(statsRow(listed, 'g', 'dsh-model-gateway_b').ignored, 1)
   })
 })
 

@@ -1,7 +1,7 @@
 {
-  "name": "@leaf233/dsh-model-relay",
+  "name": "@leaf233/dsh-model-gateway",
   "displayName": "模型中转站",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Model relay station for DeepSeek Harness (模型中转站): serve any registered DSH LLM provider (e.g. @tnnevol/dsh-codebuddy) over an OpenAI-compatible /v1 API, so other projects can call those models with a standard OpenAI client.",
   "type": "module",
   "license": "Apache-2.0",
@@ -9,13 +9,13 @@
   "contributors": [
     "qilin-zhu (original author)"
   ],
-  "homepage": "https://github.com/Leafyezi233/dsh-model-relay",
+  "homepage": "https://github.com/Leafyezi233/dsh-model-gateway",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Leafyezi233/dsh-model-relay.git"
+    "url": "git+https://github.com/Leafyezi233/dsh-model-gateway.git"
   },
   "bugs": {
-    "url": "https://github.com/Leafyezi233/dsh-model-relay/issues"
+    "url": "https://github.com/Leafyezi233/dsh-model-gateway/issues"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",

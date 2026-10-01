@@ -91,7 +91,7 @@ let bad = 0
 for (const [code, [wantStatus, wantRetry]] of Object.entries(EXPECTED)) {
   const { llm, routes } = mounted(code)
   let failure
-  for await (const chunk of llm.stream({ provider: 'dsh-model-relay', model: 'g', messages: [] })) {
+  for await (const chunk of llm.stream({ provider: 'dsh-model-gateway', model: 'g', messages: [] })) {
     if (chunk.type === 'finish') failure = chunk.reason?.failure
   }
   const status = await httpStatus(routes)

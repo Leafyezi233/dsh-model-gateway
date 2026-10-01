@@ -21,7 +21,7 @@ const test = async (label, fn) => {
   }
 }
 
-const PROVIDER = 'dsh-model-relay'
+const PROVIDER = 'dsh-model-gateway'
 
 const EFFORTS = [
   { id: 'low', name: 'Low' },

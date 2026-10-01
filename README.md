@@ -1,6 +1,6 @@
-# 模型中转站 (@leaf233/dsh-model-relay)
+# 模型中转站 (@leaf233/dsh-model-gateway)
 
-> 本仓库是 [qilin-zhu/dsh-model-relay](https://github.com/qilin-zhu/dsh-model-relay) 的 fork，包名 `@leaf233/dsh-model-relay`。上游 npm 包 `dsh-model-relay`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
+> 本仓库是 [qilin-zhu/dsh-model-gateway](https://github.com/qilin-zhu/dsh-model-gateway) 的 fork，包名 `@leaf233/dsh-model-gateway`。上游 npm 包 `dsh-model-gateway`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
 
 给 DeepSeek Harness 挂一个 OpenAI 兼容的 `/v1` 接口，把 harness 里已注册的大模型（比如 `@tnnevol/dsh-codebuddy` 里的 CodeBuddy 模型）反代出去，其他项目用标准 OpenAI 客户端就能调用。
 
@@ -49,7 +49,7 @@
 
 ```sh
 # 从 npm 安装
-dsh plugin --profile web add @leaf233/dsh-model-relay
+dsh plugin --profile web add @leaf233/dsh-model-gateway
 
 # 本地开发（file: 链接）
 dsh plugin --profile web add /绝对路径/relay-upstream
@@ -61,19 +61,19 @@ dsh plugin --profile web add /绝对路径/relay-upstream
 http://127.0.0.1:3080/v1
 ```
 
-> **这个 fork 用 `@leaf233` 作用域名，不是上游的 `dsh-model-relay`。**
+> **这个 fork 用 `@leaf233` 作用域名，不是上游的 `dsh-model-gateway`。**
 >
-> npm 上那个**不带 scope 的 `dsh-model-relay` 属于上游作者**（maintainer `jarvistop`，仓库 `qilin-zhu/dsh-model-relay`），本 fork 无权发布它，而且它在 `0.1.2-rc.1` 上会直接崩（详见下文「DSH 版本支持」）。
+> npm 上那个**不带 scope 的 `dsh-model-gateway` 属于上游作者**（maintainer `jarvistop`，仓库 `qilin-zhu/dsh-model-gateway`），本 fork 无权发布它，而且它在 `0.1.2-rc.1` 上会直接崩（详见下文「DSH 版本支持」）。
 >
-> 所以如果需要版本支持或上游不一样的功能，需要使用 **`@leaf233/dsh-model-relay`**（本 fork）。
+> 所以如果需要版本支持或上游不一样的功能，需要使用 **`@leaf233/dsh-model-gateway`**（本 fork）。
 >
 > **注意区分三个名字**
 >
 > | 名字 | 值 | 用途 |
 > |---|---|---|
-> | 包名 | `@leaf233/dsh-model-relay` | npm 安装、`bundles` 列表 |
-> | patch 行的 `id` | `dsh-model-relay` | 你在自己 profile 里覆盖配置时的锚点 |
-> | provider id | `dsh-model-relay` | DSH 模型选择器里的分组命名空间（`<provider>_<模型>`） |
+> | 包名 | `@leaf233/dsh-model-gateway` | npm 安装、`bundles` 列表 |
+> | patch 行的 `id` | `dsh-model-gateway` | 你在自己 profile 里覆盖配置时的锚点 |
+> | provider id | `dsh-model-gateway` | DSH 模型选择器里的分组命名空间（`<provider>_<模型>`） |
 >
 > 只有**包名**带 scope。`id` 和 provider id 保持不带 scope，所以已有的配置覆盖和分组名不受影响。
 
@@ -149,13 +149,13 @@ resp = client.chat.completions.create(
 
 ### 在 DSH 本体里也能用
 
-本插件会**把自己注册成一个名为 `dsh-model-relay` 的 DSH provider**，它的"模型目录"就是你的分组列表。打开 **设置 → 模型**，在 `dsh-model-relay` 下面就能像选普通模型一样选到分组名。
+本插件会**把自己注册成一个名为 `dsh-model-gateway` 的 DSH provider**，它的"模型目录"就是你的分组列表。打开 **设置 → 模型**，在 `dsh-model-gateway` 下面就能像选普通模型一样选到分组名。
 
 分组名同样出现在 `/v1/models` 里，所以外部客户端和 DSH 两边都能用。
 
 > DSH 的模型选择器是全局的——注册之后，**所有**会话都能选到这些分组。
 >
-> 底层模型仍然可以直接调用（`codebuddy_deepseek-v4-flash` 这种全名照常可用）。想让外部**只**看到分组，把 `providers` 配成 `[dsh-model-relay]` 即可——但那是**对外**的过滤，不影响 DSH 界面里能看到什么。
+> 底层模型仍然可以直接调用（`codebuddy_deepseek-v4-flash` 这种全名照常可用）。想让外部**只**看到分组，把 `providers` 配成 `[dsh-model-gateway]` 即可——但那是**对外**的过滤，不影响 DSH 界面里能看到什么。
 
 ### 回退只在"还没有任何输出"之前发生
 
@@ -296,11 +296,11 @@ policy.retryableCodes.includes(failure.code)
 | 类型 | 成员 | 说明 |
 | --- | --- | --- |
 | **普通分组**（默认） | 只能是具体模型 | 现有分组全都是这一种，行为一字未变 |
-| **组合分组** | 只能是一个**已存在的普通分组**，写成 `dsh-model-relay_<分组名>` | 用来复用别的分组 |
+| **组合分组** | 只能是一个**已存在的普通分组**，写成 `dsh-model-gateway_<分组名>` | 用来复用别的分组 |
 
 **组合分组不能包含组合分组。** 这不是一条单独的限制，而是类型规则的推论：组合分组的成员类型是"普通分组"，而组合分组自己不是普通分组。所以"深度最多一层"是自动成立的，不需要额外记。
 
-**成员必须写成 `dsh-model-relay_<分组名>`，不能写裸名。** 这不是美观问题：裸名会被解析成"那个分组的**第一条腿**"，内层剩下的候选和内层的调度方式会**全部丢掉**。带前缀的写法才会把内层当成一个整体交给 DSH 派发，从而让内层按**它自己的**顺序/轮询/重试设置运行。设置页的候选下拉框只会给出正确的那种写法。
+**成员必须写成 `dsh-model-gateway_<分组名>`，不能写裸名。** 这不是美观问题：裸名会被解析成"那个分组的**第一条腿**"，内层剩下的候选和内层的调度方式会**全部丢掉**。带前缀的写法才会把内层当成一个整体交给 DSH 派发，从而让内层按**它自己的**顺序/轮询/重试设置运行。设置页的候选下拉框只会给出正确的那种写法。
 
 **类型创建后不可改。** 想把一个普通分组变成组合分组，请新建一个。
 
@@ -340,7 +340,7 @@ policy.retryableCodes.includes(failure.code)
 - 所有候选都声明了推理档位 → 取交集，聊天里出现档位选择器。
 - **任一候选没有声明推理档位**（该模型根本不接受这个参数）、或能力读不出来 → 交集为空 → **整个 `reasoning` 字段不输出**，选择器不出现。这是诚实的答案：分组无法承诺任何选择，就不该假装能。
 
-空交集时不能输出空的 `efforts` 数组——DSH 会以 `INVALID_MODEL_REASONING` 拒绝，而 `buildModelCatalog` 把"某个模型抛错"当成"整个 provider 失败"，结果是**整个 `dsh-model-relay` 从聊天选择器里消失**。
+空交集时不能输出空的 `efforts` 数组——DSH 会以 `INVALID_MODEL_REASONING` 拒绝，而 `buildModelCatalog` 把"某个模型抛错"当成"整个 provider 失败"，结果是**整个 `dsh-model-gateway` 从聊天选择器里消失**。
 
 `/v1` 那条路径是另一回事：**调用分组**时，显式传的 `reasoning_effort` 如果目标腿不支持，会被**丢弃并写警告**，而不是报 400。调用方指定的是分组，具体哪条腿应答由路由器决定，调用方无从校验，所以不该让它因此失败；档位是偏好，让上游用它自己的默认值继续跑，比整条请求失败要好，警告保证这件事不会被悄悄咽掉。
 
@@ -364,7 +364,7 @@ policy.retryableCodes.includes(failure.code)
 | **设置 → 模型** | `llm.listProviders()` × `llm.listConfigurableProviders()`，按 settingsNs 拼装。**不碰适配器。** |
 | **聊天模型选择器** | `session.modelCatalog()` → `llm.listModels()` + `llm.resolveModelInfo()`。**会调适配器。** |
 
-所以如果**卡片在、但聊天里选不到**，几乎可以断定是**适配器抛错了**（返回给 DSH 的结构不合法）。这时去看 DSH 启动日志里 `dsh-model-relay 加载失败：...` 那条，它会直接给出原因。
+所以如果**卡片在、但聊天里选不到**，几乎可以断定是**适配器抛错了**（返回给 DSH 的结构不合法）。这时去看 DSH 启动日志里 `dsh-model-gateway 加载失败：...` 那条，它会直接给出原因。
 
 ## 模型名怎么写
 
@@ -457,7 +457,7 @@ use a namespaced id such as codebuddy_deepseek-v4-flash, deepseek-official_deeps
 想让同一网络的其他设备（手机、笔记本、另一台服务器）也能调用，开一个**独立监听端口**：
 
 ```yaml
-- id: dsh-model-relay
+- id: dsh-model-gateway
   inject:
     - llm
     - webServer
@@ -507,7 +507,7 @@ http://<这台机器的局域网IP>:3081/v1
 在 `profiles/web/cordis.patch.yml` 里按 id 覆盖：
 
 ```yaml
-- id: dsh-model-relay
+- id: dsh-model-gateway
   inject:
     - llm
     - webServer
@@ -519,7 +519,7 @@ http://<这台机器的局域网IP>:3081/v1
     apiKeys:
       - sk-your-key
     # 只暴露这些 provider，默认全部
-    # 填 [dsh-model-relay] 可以让外部只看到分组、看不到底层模型。
+    # 填 [dsh-model-gateway] 可以让外部只看到分组、看不到底层模型。
     # 这是「对外」的过滤，不影响 DSH 自己能看到什么。
     providers:
       - codebuddy
@@ -558,8 +558,8 @@ http://<这台机器的局域网IP>:3081/v1
 - **没有 `/v1/embeddings`、`/v1/images`** 等接口。这个网关只做对话和模型列表；DSH 的 `llm` 服务没有 embedding 能力，所以这里不会假装有。
 - **图片输入依赖附件服务**。`ctx.attachments` 没挂载时，带图请求会被明确拒绝（400），而不是静默丢图。
 - **分组回退只在首字节前有效**（见上文"模型分组"）。
-- **组合分组只能包含普通分组**（深度最多一层），且成员必须写成 `dsh-model-relay_<分组名>`。
-- **DSH 本体的会话不会经过 `/v1`**。它走的是 DSH 自己的 provider 通道；本插件注册 `dsh-model-relay` provider 是为了让分组出现在模型选择器里，不是为了把 DSH 的请求绕回自己的 HTTP 端口。所以给 `/v1` 开鉴权**不会**影响 DSH 本体。
+- **组合分组只能包含普通分组**（深度最多一层），且成员必须写成 `dsh-model-gateway_<分组名>`。
+- **DSH 本体的会话不会经过 `/v1`**。它走的是 DSH 自己的 provider 通道；本插件注册 `dsh-model-gateway` provider 是为了让分组出现在模型选择器里，不是为了把 DSH 的请求绕回自己的 HTTP 端口。所以给 `/v1` 开鉴权**不会**影响 DSH 本体。
 - 请求体上限 32 MiB，超出返回 413。
 
 ## 开发
@@ -615,7 +615,7 @@ node test/verify-table.mjs       # 把上面那张失败表重新实测一遍，
 > 所以改完源码后如果行为没变，别怀疑代码——先对一下内容：
 >
 > ```sh
-> diff -r lib/ /绝对路径/profiles/web/node_modules/@leaf233/dsh-model-relay/lib/
+> diff -r lib/ /绝对路径/profiles/web/node_modules/@leaf233/dsh-model-gateway/lib/
 > ```
 >
 > 不一致就重新执行 `dsh plugin --profile web add file:/绝对路径/relay-upstream`。注意 pnpm 可能报 "Already up to date" 而不重新链接，这种情况先 `remove` 再 `add`。

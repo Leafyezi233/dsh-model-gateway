@@ -26,7 +26,7 @@ copyFileSync(join(repo, 'lib/index.js'), join(dir, 'lib/index.js'))
 copyFileSync(join(repo, 'test/client-id.test.mjs'), join(dir, 'test/client-id.test.mjs'))
 
 const good = readFileSync(join(repo, 'lib/client.js'), 'utf8')
-const buggy = good.replace('id: "@leaf233/dsh-model-relay",', 'id: "dsh-model-relay",')
+const buggy = good.replace('id: "@leaf233/dsh-model-gateway",', 'id: "dsh-model-gateway",')
 if (buggy === good) {
   throw new Error('could not reintroduce the bug: the scoped id pattern was not found')
 }

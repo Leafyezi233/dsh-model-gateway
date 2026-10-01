@@ -4,12 +4,12 @@
  *
  * Run: node test/client-id.test.mjs
  *
- * Why this exists: scoping package.json to @leaf233/dsh-model-relay while
+ * Why this exists: scoping package.json to @leaf233/dsh-model-gateway while
  * leaving the browser half's registered id unscoped produced this at runtime —
  *
- *   failed to import loader entry efb9826d (@leaf233/dsh-model-relay):
- *   client-modules: bundle .../@leaf233/dsh-model-relay/client.js loaded
- *   without registering "@leaf233/dsh-model-relay" via __ModuleLoader__.load
+ *   failed to import loader entry efb9826d (@leaf233/dsh-model-gateway):
+ *   client-modules: bundle .../@leaf233/dsh-model-gateway/client.js loaded
+ *   without registering "@leaf233/dsh-model-gateway" via __ModuleLoader__.load
  *
  * The bundle loaded fine; it just registered a different key, so the loader
  * rejected it and the WHOLE plugin failed to import — the host half never ran,
@@ -60,7 +60,7 @@ check(
 const hostName = host.match(/^export const name = '([^']+)'/m)?.[1]
 check(hostName !== undefined, 'lib/index.js exports a name')
 check(
-  hostName === 'dsh-model-relay',
+  hostName === 'dsh-model-gateway',
   `the host name stays unscoped as the patch anchor (name=${JSON.stringify(hostName)})`,
 )
 
