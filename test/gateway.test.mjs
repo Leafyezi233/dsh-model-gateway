@@ -2270,5 +2270,50 @@ await test('an attempt is answered at most once', async () => {
   })
 })
 
+await test('listStats ships the requested range slice and a live scoreboard; listGroups no longer carries the history', async () => {
+  const { ctx, routes, settingsRoutes } = makeCtx(textChunks)
+  mount(ctx, {})
+  await withServer(routes, async (base) => {
+    const listed = await callSettings(settingsRoutes, 'listGroups')
+    assert.equal(listed.value.statsHistory, undefined, 'the heavy history moved to listStats')
+    assert.ok('stats' in listed.value, 'the live scoreboard still rides listGroups')
+
+    const stats = await callSettings(settingsRoutes, 'listStats', { days: 30 })
+    assert.equal(stats.value.range, 30)
+    assert.ok(stats.value.keepDays >= 30, 'the retained window bounds the range')
+    assert.deepEqual(Object.keys(stats.value).sort(), ['candidates', 'days', 'keepDays', 'range', 'stats'])
+    assert.ok('stats' in stats.value, 'a poll refreshes the scoreboard too')
+
+    // An off-range request falls back to 90 rather than echoing garbage.
+    const clamped = await callSettings(settingsRoutes, 'listStats', { days: 12345 })
+    assert.equal(clamped.value.range, 90)
+  })
+})
+
+await test('resetStats wipes the scoreboard and persists the empty store', async () => {
+  const { ctx, routes, settingsRoutes } = makeCtx(textChunks)
+  mount(ctx, {})
+  await withServer(routes, async (base) => {
+    await createScheduledGroup(settingsRoutes, 'g', ['codebuddy_glm-5.2'], 'sequential', 0)
+    const res = await fetch(`${base}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'g', messages: [{ role: 'user', content: 'hi' }] }),
+    })
+    assert.equal(res.status, 200)
+    await res.text()
+    assert.equal(statsRow(await callSettings(settingsRoutes, 'listGroups'), 'g', 'codebuddy_glm-5.2').attempts, 1)
+
+    const cleared = await callSettings(settingsRoutes, 'resetStats', {})
+    assert.deepEqual(cleared.value, { cleared: true })
+    // The row is GONE, not zeroed — statsRow throws on a missing row, so
+    // assert the absence directly.
+    const after = await callSettings(settingsRoutes, 'listGroups')
+    assert.equal(after.value.stats?.g?.candidates?.['codebuddy_glm-5.2'], undefined)
+    const stats = await callSettings(settingsRoutes, 'listStats', { days: 7 })
+    assert.deepEqual(stats.value.days, {})
+  })
+})
+
 console.log(failures === 0 ? '\nAll gateway translation tests passed.' : `\n${failures} test(s) failed.`)
 process.exit(failures === 0 ? 0 : 1)

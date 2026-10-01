@@ -75,6 +75,9 @@ function loadComponent() {
     },
     useCallback: (fn) => fn,
     useMemo: (fn) => fn(),
+    // Real memo wraps the component and compares props; the structural test
+    // renders directly, so a passthrough is faithful enough for shape checks.
+    memo: (component) => component,
     useEffect: () => {},
     useRef: (init) => ({ current: init }),
   }
