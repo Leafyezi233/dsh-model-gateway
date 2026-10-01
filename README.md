@@ -20,18 +20,17 @@
 ![DSH 0.1.5-rc.2+](https://img.shields.io/badge/DSH-0.1.5--rc.2%2B-brightgreen.svg)
 ![DSH 0.1.6-alpha.1+](https://img.shields.io/badge/DSH-0.1.6--alpha.1%2B-brightgreen.svg)
 ![DSH 0.1.7-alpha.1+](https://img.shields.io/badge/DSH-0.1.7--alpha.1%2B-brightgreen.svg)
+![DSH 0.2.0-rc.1+](https://img.shields.io/badge/DSH-0.2.0--rc.1%2B-brightgreen.svg)
 
-> `0.1.2-rc.1` 与 `0.1.7-alpha.1+` 为本 fork 新增的支持范围，`0.1.2-rc.1` 需要下面三处修复；`0.1.1` 及更早不在声明范围内
+> `0.1.2-rc.1`、`0.1.7-alpha.1+` 与 `0.2.0-rc.1+` 为本 fork 新增的支持范围，`0.1.2-rc.1` 需要下面三处修复；`0.1.1` 及更早不在声明范围内。`0.2.0` 上的设置页图标做了跨版本回退，0.1.5–0.2.0 均可正常渲染
 
 本仓库的 `package.json` 声明：
 
 ```json
-"engines": { "dsh": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1" }
+"engines": { "dsh": "0.1.2-rc.1 || ^0.1.5-rc.2 || ^0.1.6-alpha.1 || ^0.1.7-alpha.1 || ^0.2.0-rc.1" }
 ```
 
-六个 `@deepseek-ai/*` peer 依赖同样带上 `0.1.2-rc.1 ||` 分支。
-
-三种写法的实际匹配结果：
+六个 `@deepseek-ai/*` peer 依赖同样带上这五段范围。
 
 ### 0.1.2-rc.1 上必须的三处修复
 
