@@ -1,6 +1,6 @@
 # 模型中转站 (@leaf233/dsh-model-gateway)
 
-> 本仓库是 [qilin-zhu/dsh-model-gateway](https://github.com/qilin-zhu/dsh-model-gateway) 的 fork，包名 `@leaf233/dsh-model-gateway`。上游 npm 包 `dsh-model-gateway`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
+> 本仓库是 [qilin-zhu/dsh-model-relay](https://github.com/qilin-zhu/dsh-model-relay) 的 fork，包名 `@leaf233/dsh-model-gateway`。上游 npm 包 `dsh-model-relay`（0.1.1）与本 fork 无关、也不兼容 `0.1.2-rc.1`，见下文「安装」。
 
 给 DeepSeek Harness 挂一个 OpenAI 兼容的 `/v1` 接口，把 harness 里已注册的大模型（比如 `@tnnevol/dsh-codebuddy` 里的 CodeBuddy 模型）反代出去，其他项目用标准 OpenAI 客户端就能调用。
 
@@ -61,9 +61,9 @@ dsh plugin --profile web add /绝对路径/relay-upstream
 http://127.0.0.1:3080/v1
 ```
 
-> **这个 fork 用 `@leaf233` 作用域名，不是上游的 `dsh-model-gateway`。**
+> **这个 fork 用 `@leaf233` 作用域名，不是上游的 `dsh-model-relay`。**
 >
-> npm 上那个**不带 scope 的 `dsh-model-gateway` 属于上游作者**（maintainer `jarvistop`，仓库 `qilin-zhu/dsh-model-gateway`），本 fork 无权发布它，而且它在 `0.1.2-rc.1` 上会直接崩（详见下文「DSH 版本支持」）。
+> npm 上那个**不带 scope 的 `dsh-model-relay` 属于上游作者**（maintainer `jarvistop`，仓库 `qilin-zhu/dsh-model-relay`），本 fork 无权发布它，而且它在 `0.1.2-rc.1` 上会直接崩（详见下文「DSH 版本支持」）。
 >
 > 所以如果需要版本支持或上游不一样的功能，需要使用 **`@leaf233/dsh-model-gateway`**（本 fork）。
 >
