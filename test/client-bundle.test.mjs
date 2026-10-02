@@ -266,9 +266,10 @@ await test('heatmap legend ships the four intensity swatches and the empty one',
   assert.ok(source.includes('dsh-gw-heat-empty dsh-gw-heat-legend-swatch'), 'the no-data swatch is in the legend')
 })
 
-await test('heatmap cells carry outlines; empty days go dashed instead of invisible', async () => {
+await test('heatmap cells are fixed squares with even gaps; empty days get a faint fill instead of vanishing', async () => {
   assert.ok(source.includes('outline:1px solid'), 'data cells have a solid outline')
-  assert.ok(source.includes('outline:1px dashed'), 'empty cells have a dashed outline')
+  assert.ok(source.includes('grid-auto-columns:13px') && source.includes('grid-template-rows:repeat(7,13px)'), 'cells are fixed 13px squares, never stretched by fr tracks')
+  assert.ok(source.includes('dsh-gw-heat-empty{background:color-mix'), 'empty cells have a faint gray fill')
   assert.ok(!source.includes('dsh-gw-heat-empty{opacity:0.35}'), 'the old invisible empty style is gone')
 })
 
