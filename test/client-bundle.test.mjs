@@ -273,6 +273,17 @@ await test('heatmap cells are fixed squares with even gaps; empty days get a fai
   assert.ok(!source.includes('dsh-gw-heat-empty{opacity:0.35}'), 'the old invisible empty style is gone')
 })
 
+await test('N2/N3/N4/N8: toasts, export, updated-ago and a11y hooks are wired', async () => {
+  assert.ok(source.includes('function showToast'), 'toast helper exists')
+  assert.ok(source.includes('node.textContent = message'), 'toast uses textContent, never markup')
+  assert.ok(source.includes('function exportHistoryCsv') && source.includes('function exportHistoryJson'), 'export helpers exist')
+  assert.ok(source.includes('URL.revokeObjectURL'), 'object URLs are revoked after download')
+  assert.ok(source.includes('function UpdatedAgo'), 'updated-ago caption component exists')
+  assert.ok(source.includes('@media (prefers-reduced-motion:reduce)'), 'reduced-motion is honored')
+  assert.ok(source.includes(':focus-visible'), 'keyboard focus ring exists')
+  assert.ok(!source.includes('"aria-label": "heatmap"'), 'heatmap aria-label is localized')
+})
+
 await test('heatmap hover title spells calls and tokens, not just the date', async () => {
   assert.ok(source.includes('heatCellTitle'), 'the title builder exists')
   assert.ok(source.includes('title: heatCellTitle(t, cell, metric)'), 'cells use it for their title')
